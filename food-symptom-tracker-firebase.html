@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Notes — Symptom Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  #ft-root {
+    --bg: #FBF3DF;
+    --paper: #FFFBF1;
+    --ink: #4A3728;
+    --ink-soft: #8A7860;
+    --line: #E8D9B5;
+    --rust: #B5541F;
+    --rust-soft: #F3DCC0;
+    --sage: #6B7A3A;
+    --sage-soft: #E7E7C4;
+    --accent: #C08A2E;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100%;
+    padding: 28px 20px 60px;
+    box-sizing: border-box;
+  }
+  #ft-root * { box-sizing: border-box; }
+  #ft-root h1, #ft-root h2, #ft-root h3 { font-family: 'Fraunces', serif; font-weight: 600; margin: 0; }
+  #ft-root .mono { font-family: 'IBM Plex Mono', monospace; }
+
+  .ft-wrap { max-width: 880px; margin: 0 auto; }
+  .ft-header { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 8px; }
+  .ft-header h1 { font-size: 26px; letter-spacing: -0.01em; }
+  .ft-header .ft-sub { font-size: 12.5px; color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; }
+
+  .ft-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+  .ft-tab { padding: 10px 16px; font-size: 13.5px; font-family: 'IBM Plex Mono', monospace; color: var(--ink-soft); cursor: pointer; border-bottom: 2px solid transparent; user-select: none; }
+  .ft-tab.active { color: var(--ink); border-bottom-color: var(--rust); }
+  .ft-tab:hover:not(.active) { color: var(--ink); }
+
+  .ft-card { background: var(--paper); border: 1px solid var(--line); border-radius: 3px; padding: 20px; margin-bottom: 16px; }
+  .ft-card + .ft-card { margin-top: 16px; }
+  .ft-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; margin-bottom: 12px; }
+
+  .ft-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+  .ft-field { display: flex; flex-direction: column; gap: 5px; }
+  .ft-field label { font-size: 11.5px; color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; }
+  .ft-field input, .ft-field select, .ft-field textarea {
+    font-family: 'Inter', sans-serif; font-size: 14px; padding: 8px 10px;
+    border: 1px solid var(--line); border-radius: 2px; background: white; color: var(--ink);
+  }
+  .ft-field input:focus, .ft-field select:focus, .ft-field textarea:focus { outline: none; border-color: var(--accent); }
+  .ft-field input::placeholder, .ft-field textarea::placeholder { font-style: italic; color: var(--ink-soft); opacity: 0.75; }
+
+  button.ft-btn {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; padding: 9px 14px;
+    background: var(--ink); color: var(--paper); border: none; border-radius: 2px; cursor: pointer;
+  }
+  button.ft-btn:hover { background: #2E2015; }
+  button.ft-btn.ghost { background: transparent; color: var(--ink-soft); border: 1px solid var(--line); }
+  button.ft-btn.ghost:hover { color: var(--ink); border-color: var(--ink-soft); }
+  button.ft-btn.danger { background: transparent; color: var(--rust); border: 1px solid var(--rust-soft); padding: 4px 8px; font-size: 11px; }
+
+  .ft-chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .ft-chip { padding: 7px 13px; border: 1px solid var(--line); border-radius: 20px; font-size: 13px; cursor: pointer; user-select: none; background: white; }
+  .ft-chip.selected { background: var(--rust); border-color: var(--rust); color: white; }
+
+  .ft-flag-toggle { display: flex; gap: 8px; margin-top: 4px; }
+  .ft-flag-btn { flex: 1; padding: 14px 6px; border: 1px solid var(--line); border-radius: 3px; cursor: pointer; text-align: center; background: white; font-family: 'IBM Plex Mono', monospace; font-size: 12px; }
+  .ft-flag-btn.level-1.selected { background: var(--rust-soft); border-color: var(--rust); color: var(--rust); }
+  .ft-flag-btn.level-2.selected { background: #F6E2C4; border-color: #C97A3D; color: #C97A3D; }
+  .ft-flag-btn.level-3.selected { background: #F2E4B8; border-color: var(--accent); color: var(--accent); }
+  .ft-flag-btn.level-4.selected { background: #E9E8B9; border-color: #9C8B3E; color: #9C8B3E; }
+  .ft-flag-btn.level-5.selected { background: var(--sage-soft); border-color: var(--sage); color: var(--sage); }
+
+  .ft-ledger-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .ft-ledger-table th { text-align: left; font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); padding: 6px 8px; border-bottom: 1px solid var(--ink); }
+  .ft-ledger-table td { padding: 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  .ft-stamp { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--rust); color: var(--rust); font-size: 12px; font-weight: 700; transform: rotate(-8deg); }
+  .ft-stamp.good { border-color: var(--sage); color: var(--sage); }
+  .ft-date-cell { font-family: 'IBM Plex Mono', monospace; }
+
+  .ft-ingredient-rank { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .ft-ingredient-rank:last-child { border-bottom: none; }
+  .ft-ingredient-rank .ft-bar-track { flex: 1; height: 7px; background: var(--line); border-radius: 4px; overflow: hidden; }
+  .ft-ingredient-rank .ft-bar-fill { height: 100%; background: var(--rust); }
+  .ft-ingredient-rank .ft-ir-name { width: 140px; font-size: 13px; flex-shrink: 0; }
+  .ft-ingredient-rank .ft-ir-stat { width: 90px; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--ink-soft); flex-shrink: 0; }
+
+  .ft-empty { text-align: center; padding: 30px 10px; color: var(--ink-soft); font-size: 13.5px; }
+  .ft-note { font-size: 12px; color: var(--ink-soft); margin-top: 10px; line-height: 1.5; }
+  .ft-loading { padding: 40px; text-align: center; color: var(--ink-soft); font-family: 'IBM Plex Mono', monospace; font-size: 13px; }
+
+  .ft-pie-wrap { display: flex; gap: 26px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+  .ft-pie { width: 160px; height: 160px; border-radius: 50%; flex-shrink: 0; box-shadow: inset 0 0 0 1px var(--line); }
+  .ft-pie-legend { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 8px; }
+  .ft-pie-legend-item { display: flex; align-items: center; gap: 9px; font-size: 13px; }
+  .ft-pie-swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+  .ft-pie-legend-label { flex: 1; }
+  .ft-pie-legend-stat { font-family: 'IBM Plex Mono', monospace; font-size: 11.5px; color: var(--ink-soft); }
+  .ft-month-input { font-family: 'IBM Plex Mono', monospace; padding: 8px 10px; border: 1px solid var(--line); border-radius: 2px; }
+  .ft-sync-badge { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; padding: 3px 8px; border-radius: 10px; }
+  .ft-sync-badge.ok { background: var(--sage-soft); color: var(--sage); }
+  .ft-sync-badge.err { background: var(--rust-soft); color: var(--rust); }
+  .ft-sync-badge.pending { background: var(--line); color: var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<div id="ft-root">
+  <div class="ft-wrap">
+    <div class="ft-header">
+      <h1>Field Notes</h1>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="ft-sub" id="ft-datebadge">—</div>
+        <div class="ft-sync-badge pending" id="ft-syncbadge">connecting…</div>
+      </div>
+    </div>
+    <div class="ft-tabs" id="ft-tabs"></div>
+    <div id="ft-content"><div class="ft-loading">loading ledger…</div></div>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+(function(){
+  // ---------- Firebase setup ----------
+  const firebaseConfig = {
+    apiKey: "AIzaSyCppGEj6KpRTHJWaj12asZdrHo2m9Sd75w",
+    authDomain: "field-notes-e78a4.firebaseapp.com",
+    projectId: "field-notes-e78a4",
+    storageBucket: "field-notes-e78a4.firebasestorage.app",
+    messagingSenderId: "604604500305",
+    appId: "1:604604500305:web:3b2192ab5438830eb5ab70"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const CHECKINS = db.collection('checkins');
+
+  function setSyncBadge(state, text){
+    const el = document.getElementById('ft-syncbadge');
+    if (!el) return;
+    el.className = 'ft-sync-badge ' + state;
+    el.textContent = text;
+  }
+
+  const TABS = ['Check-in', 'Ledger', 'History'];
+  let state = {
+    tab: 'Check-in',
+    selectedDate: todayStr(),
+    days: {},           // { 'YYYY-MM-DD': {feeling:{mood,symptoms:[],notes}} }
+    selectedMonth: todayStr().slice(0,7), // 'YYYY-MM' for the check-in pie charts
+    expandedMonths: {}, // { 'YYYY-MM': true } which months are expanded on the History tab
+    loaded: false,
+  };
+  const DEFAULT_SYMPTOMS = ['Allergies','Bloating','Brain fog','Fatigue','Headache','Heartburn','Joint pain','Stomach ache','Trouble sleeping'];
+  const MOOD_LEVELS = [
+    {level: 1, label: 'Worst'},
+    {level: 2, label: 'Rough'},
+    {level: 3, label: 'Okay'},
+    {level: 4, label: 'Good'},
+    {level: 5, label: 'Best'},
+  ];
+  const MOOD_COLORS = {1: '#B5541F', 2: '#C97A3D', 3: '#C08A2E', 4: '#9C8B3E', 5: '#6B7A3A'};
+  function moodLabel(level){
+    const m = MOOD_LEVELS.find(m => m.level === level);
+    return m ? m.label : '';
+  }
+  // Older entries stored a boolean `flagged` (fine/off) instead of a 1-5 `mood`. Migrate on load.
+  function migrateFeeling(feeling){
+    if (!feeling) return feeling;
+    if (feeling.mood == null && feeling.flagged != null) {
+      feeling.mood = feeling.flagged === false ? 4 : 2;
+    }
+    return feeling;
+  }
+
+  function todayStr(){
+    const d = new Date();
+    return d.toISOString().slice(0,10);
+  }
+  function fmtDate(s){
+    const d = new Date(s + 'T00:00:00');
+    return d.toLocaleDateString(undefined, {weekday:'short', month:'short', day:'numeric'});
+  }
+
+  async function loadAll(){
+    setSyncBadge('pending', 'syncing…');
+    try {
+      const snap = await CHECKINS.get();
+      snap.forEach(doc => {
+        const dateKey = doc.id;
+        const parsed = doc.data();
+        if (parsed.feeling) parsed.feeling = migrateFeeling(parsed.feeling);
+        state.days[dateKey] = parsed;
+      });
+      setSyncBadge('ok', 'synced');
+    } catch(e){
+      console.error('Firestore load failed:', e);
+      setSyncBadge('err', 'offline / error');
+    }
+
+    state.loaded = true;
+    render();
+  }
+
+  async function saveDay(dateKey){
+    const data = state.days[dateKey] || {feeling: null};
+    setSyncBadge('pending', 'saving…');
+    try {
+      await CHECKINS.doc(dateKey).set(data);
+      setSyncBadge('ok', 'synced');
+    } catch(e){
+      console.error('Firestore save failed:', e);
+      setSyncBadge('err', 'save failed');
+    }
+  }
+  function getDay(dateKey){
+    if (!state.days[dateKey]) state.days[dateKey] = {feeling: null};
+    return state.days[dateKey];
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ---------- render shell ----------
+  function render(){
+    document.getElementById('ft-datebadge').textContent = fmtDate(state.selectedDate);
+    const tabsEl = document.getElementById('ft-tabs');
+    tabsEl.innerHTML = TABS.map(t => `<div class="ft-tab${t===state.tab?' active':''}" data-tab="${t}">${t}</div>`).join('');
+    tabsEl.querySelectorAll('.ft-tab').forEach(el => el.onclick = () => { state.tab = el.dataset.tab; render(); });
+
+    const content = document.getElementById('ft-content');
+    if (!state.loaded) { content.innerHTML = '<div class="ft-loading">loading ledger…</div>'; return; }
+
+    if (state.tab === 'Check-in') content.innerHTML = renderCheckin();
+    else if (state.tab === 'Ledger') content.innerHTML = renderLedger();
+    else if (state.tab === 'History') content.innerHTML = renderHistory();
+
+    attachHandlers();
+  }
+
+  // ---------- CHECK-IN TAB ----------
+  function renderCheckin(){
+    const day = getDay(state.selectedDate);
+    const feeling = day.feeling || {mood: null, symptoms: [], notes: ''};
+    const allSymptoms = Array.from(new Set([...DEFAULT_SYMPTOMS, ...(feeling.symptoms||[])])).sort((a,b) => a.localeCompare(b));
+    return `
+      <div class="ft-card">
+        <div class="ft-section-title">Select date</div>
+        <input type="date" id="ft-date-input" value="${state.selectedDate}" style="font-family:'IBM Plex Mono',monospace;padding:8px 10px;border:1px solid var(--line);border-radius:2px;">
+      </div>
+      <div class="ft-card">
+        <div class="ft-section-title">How did ${fmtDate(state.selectedDate)} feel, overall?</div>
+        <div class="ft-flag-toggle">
+          ${MOOD_LEVELS.map(m => `<div class="ft-flag-btn level-${m.level} ${feeling.mood===m.level?'selected':''}" data-mood="${m.level}">${m.label.toUpperCase()}</div>`).join('')}
+        </div>
+      </div>
+      <div class="ft-card">
+        <div class="ft-section-title">Symptoms</div>
+        <div class="ft-chip-group" id="ft-symptom-chips">
+          ${allSymptoms.map(s => `<div class="ft-chip ${feeling.symptoms&&feeling.symptoms.includes(s)?'selected':''}" data-symptom="${escapeHtml(s)}">${escapeHtml(s)}</div>`).join('')}
+        </div>
+        <div class="ft-row" style="margin-top:12px;">
+          <div class="ft-field" style="flex:1;">
+            <label>Add custom symptom</label>
+            <input type="text" id="ft-custom-symptom" placeholder="Type and press Enter">
+          </div>
+        </div>
+      </div>
+      <div class="ft-card">
+        <div class="ft-section-title">Notes</div>
+        <textarea id="ft-notes" rows="4" style="width:100%;" placeholder="Anything else worth remembering about today...">${escapeHtml(feeling.notes||'')}</textarea>
+        <div style="margin-top:14px;"><button class="ft-btn" id="ft-save-checkin">Save check-in</button></div>
+      </div>
+      <div class="ft-card">
+        <div class="ft-section-title">Monthly breakdown</div>
+        <input type="month" id="ft-month-input" class="ft-month-input" value="${state.selectedMonth}">
+        ${renderPieChart(buildMonthlyPieData(state.selectedMonth))}
+      </div>
+      <div class="ft-card">
+        <div class="ft-section-title">How you've been feeling</div>
+        ${renderPieChart(buildMonthlyMoodPieData(state.selectedMonth), (() => {
+          const d = buildMonthlyMoodPieData(state.selectedMonth);
+          return `${d.daysCheckedIn} day${d.daysCheckedIn===1?'':'s'} checked in this month with an overall rating.`;
+        })())}
+      </div>
+    `;
+  }
+
+  // ---------- LEDGER TAB ----------
+  function fmtMonthLabel(monthStr){
+    const d = new Date(monthStr + '-01T00:00:00');
+    return d.toLocaleDateString(undefined, {month:'long', year:'numeric'});
+  }
+
+  // Builds the day-by-day table + symptom frequency ranking for a single month.
+  function renderMonthTable(monthStr){
+    const dateKeys = Object.keys(state.days)
+      .filter(dk => dk.startsWith(monthStr) && state.days[dk].feeling)
+      .sort().reverse();
+    if (!dateKeys.length) return '<div class="ft-empty">No check-ins logged this month.</div>';
+
+    const rows = dateKeys.map(dk => {
+      const f = state.days[dk].feeling;
+      const mood = f ? f.mood : null;
+      const stampHtml = mood != null
+        ? `<span class="ft-stamp" style="border-color:${MOOD_COLORS[mood]};color:${MOOD_COLORS[mood]};" title="${escapeHtml(moodLabel(mood))}">${mood}</span>`
+        : '<span class="mono" style="color:var(--ink-soft);font-size:11px;">—</span>';
+      const symptomText = (f.symptoms||[]).join(', ') || '—';
+      return `<tr>
+        <td class="ft-date-cell">${dk}</td>
+        <td>${stampHtml}</td>
+        <td style="color:var(--ink-soft);font-size:12.5px;">${escapeHtml(symptomText)}</td>
+        <td style="color:var(--ink-soft);font-size:12.5px;">${escapeHtml(f.notes || '')}</td>
+      </tr>`;
+    }).join('');
+
+    const counts = {};
+    dateKeys.forEach(dk => {
+      (state.days[dk].feeling.symptoms||[]).forEach(s => { counts[s] = (counts[s]||0) + 1; });
+    });
+    const ranked = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+    const maxCount = ranked.length ? ranked[0][1] : 1;
+
+    return `
+      <table class="ft-ledger-table">
+        <thead><tr><th>Date</th><th>Flag</th><th>Symptoms</th><th>Notes</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="ft-section-title" style="margin-top:18px;">Most frequent symptoms</div>
+      ${ranked.length ? ranked.map(([name,count]) => {
+        const width = Math.round((count/maxCount)*100);
+        return `<div class="ft-ingredient-rank">
+          <div class="ft-ir-name">${escapeHtml(name)}</div>
+          <div class="ft-bar-track"><div class="ft-bar-fill" style="width:${width}%;"></div></div>
+          <div class="ft-ir-stat">${count} day${count===1?'':'s'}</div>
+        </div>`;
+      }).join('') : '<div class="ft-empty">No symptoms logged yet.</div>'}
+    `;
+  }
+
+  function renderLedger(){
+    const currentMonth = todayStr().slice(0,7);
+    return `
+      <div class="ft-card">
+        <div class="ft-section-title">${fmtMonthLabel(currentMonth)}</div>
+        ${renderMonthTable(currentMonth)}
+      </div>
+      <div class="ft-note">Looking for an earlier month? Check the History tab.</div>
+    `;
+  }
+
+  // ---------- HISTORY TAB ----------
+  function renderHistory(){
+    const currentMonth = todayStr().slice(0,7);
+    const allMonths = Array.from(new Set(
+      Object.keys(state.days).filter(dk => state.days[dk].feeling).map(dk => dk.slice(0,7))
+    )).filter(m => m !== currentMonth).sort().reverse();
+
+    if (!allMonths.length) {
+      return '<div class="ft-card"><div class="ft-empty">No past months yet — once you move into a new month, it will show up here.</div></div>';
+    }
+
+    return allMonths.map(monthStr => {
+      const expanded = !!state.expandedMonths[monthStr];
+      const checkinCount = Object.keys(state.days).filter(dk => dk.startsWith(monthStr) && state.days[dk].feeling).length;
+      return `
+        <div class="ft-card">
+          <div class="ft-section-title" data-toggle-month="${monthStr}" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:${expanded?'12px':'0'};">
+            <span>${fmtMonthLabel(monthStr)} · ${checkinCount} check-in${checkinCount===1?'':'s'}</span>
+            <span class="mono" style="color:var(--ink-soft);">${expanded ? '▲' : '▼'}</span>
+          </div>
+          ${expanded ? renderMonthTable(monthStr) : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ---------- Pie chart helpers ----------
+  const PIE_PALETTE = ['#C97A3D','#B5541F','#C08A2E','#9C8B3E','#6B4E31','#6B7A3A','#A6672A','#DDA15E','#7A5C3E','#8B5E34'];
+
+
+  function buildMonthlyPieData(monthStr){
+    const dateKeys = Object.keys(state.days).filter(dk => dk.startsWith(monthStr) && state.days[dk].feeling);
+    const noSymptomCount = dateKeys.filter(dk => !(state.days[dk].feeling.symptoms||[]).length).length;
+    const symptomCounts = {};
+    dateKeys.forEach(dk => {
+      (state.days[dk].feeling.symptoms||[]).forEach(s => {
+        symptomCounts[s] = (symptomCounts[s]||0) + 1;
+      });
+    });
+    const segments = [];
+    if (noSymptomCount > 0) segments.push({label: 'No symptoms', count: noSymptomCount});
+    Object.entries(symptomCounts)
+      .sort((a,b) => b[1]-a[1])
+      .forEach(([label,count]) => segments.push({label, count}));
+
+    const total = segments.reduce((s,seg)=>s+seg.count, 0);
+    const daysCheckedIn = dateKeys.length;
+    return {segments, total, daysCheckedIn};
+  }
+
+  function buildMonthlyMoodPieData(monthStr){
+    const dateKeys = Object.keys(state.days).filter(dk => dk.startsWith(monthStr) && state.days[dk].feeling && state.days[dk].feeling.mood != null);
+    const segments = [];
+    const colors = [];
+    MOOD_LEVELS.forEach(m => {
+      const count = dateKeys.filter(dk => state.days[dk].feeling.mood === m.level).length;
+      if (count > 0) { segments.push({label: m.label, count}); colors.push(MOOD_COLORS[m.level]); }
+    });
+    const total = segments.reduce((s,seg)=>s+seg.count, 0);
+    return {segments, total, daysCheckedIn: dateKeys.length, colors};
+  }
+
+  function renderPieChart(pieData, noteText){
+    const {segments, total, daysCheckedIn, colors} = pieData;
+    if (!daysCheckedIn) {
+      return '<div class="ft-empty">No check-ins logged for this month yet.</div>';
+    }
+    const colorFor = (i) => (colors && colors[i]) ? colors[i] : PIE_PALETTE[i % PIE_PALETTE.length];
+    let cumulative = 0;
+    const stops = segments.map((seg, i) => {
+      const startPct = (cumulative/total)*100;
+      cumulative += seg.count;
+      const endPct = (cumulative/total)*100;
+      return `${colorFor(i)} ${startPct}% ${endPct}%`;
+    }).join(', ');
+    const gradient = `conic-gradient(${stops})`;
+    const legend = segments.map((seg,i) => {
+      const pct = Math.round((seg.count/total)*100);
+      return `<div class="ft-pie-legend-item">
+        <div class="ft-pie-swatch" style="background:${colorFor(i)};"></div>
+        <div class="ft-pie-legend-label">${escapeHtml(seg.label)}</div>
+        <div class="ft-pie-legend-stat">${seg.count} · ${pct}%</div>
+      </div>`;
+    }).join('');
+    const defaultNote = `${daysCheckedIn} day${daysCheckedIn===1?'':'s'} checked in this month. Days with more than one symptom count toward each symptom, so slices reflect symptom occurrences rather than a strict share of days.`;
+    return `
+      <div class="ft-pie-wrap">
+        <div class="ft-pie" style="background:${gradient};"></div>
+        <div class="ft-pie-legend">${legend}</div>
+      </div>
+      <div class="ft-note">${noteText || defaultNote}</div>
+    `;
+  }
+
+  // ---------- handlers ----------
+  function attachHandlers(){
+    if (state.tab === 'History') {
+      document.querySelectorAll('[data-toggle-month]').forEach(el => {
+        el.onclick = () => {
+          const m = el.dataset.toggleMonth;
+          state.expandedMonths[m] = !state.expandedMonths[m];
+          render();
+        };
+      });
+    }
+
+    if (state.tab === 'Check-in') {
+      const dateInput = document.getElementById('ft-date-input');
+      if (dateInput) dateInput.onchange = () => { state.selectedDate = dateInput.value; render(); };
+
+      const monthInput = document.getElementById('ft-month-input');
+      if (monthInput) monthInput.onchange = () => { state.selectedMonth = monthInput.value; render(); };
+
+      document.querySelectorAll('[data-mood]').forEach(el => {
+        el.onclick = async () => {
+          const day = getDay(state.selectedDate);
+          if (!day.feeling) day.feeling = {mood:null, symptoms:[], notes:''};
+          day.feeling.mood = parseInt(el.dataset.mood);
+          await saveDay(state.selectedDate);
+          render();
+        };
+      });
+      document.querySelectorAll('[data-symptom]').forEach(el => {
+        el.onclick = async () => {
+          const day = getDay(state.selectedDate);
+          if (!day.feeling) day.feeling = {mood:null, symptoms:[], notes:''};
+          const s = el.dataset.symptom;
+          const idx = day.feeling.symptoms.indexOf(s);
+          if (idx >= 0) day.feeling.symptoms.splice(idx,1); else day.feeling.symptoms.push(s);
+          await saveDay(state.selectedDate);
+          render();
+        };
+      });
+      const customInput = document.getElementById('ft-custom-symptom');
+      if (customInput) customInput.onkeydown = async (e) => {
+        if (e.key === 'Enter' && customInput.value.trim()) {
+          const day = getDay(state.selectedDate);
+          if (!day.feeling) day.feeling = {mood:null, symptoms:[], notes:''};
+          day.feeling.symptoms.push(customInput.value.trim());
+          customInput.value = '';
+          await saveDay(state.selectedDate);
+          render();
+        }
+      };
+      const saveBtn = document.getElementById('ft-save-checkin');
+      if (saveBtn) saveBtn.onclick = async () => {
+        const day = getDay(state.selectedDate);
+        if (!day.feeling) day.feeling = {mood:null, symptoms:[], notes:''};
+        day.feeling.notes = document.getElementById('ft-notes').value;
+        await saveDay(state.selectedDate);
+        saveBtn.textContent = 'Saved ✓';
+        setTimeout(()=>{ saveBtn.textContent = 'Save check-in'; }, 1400);
+      };
+    }
+  }
+
+  loadAll();
+})();
+</script>
+</body>
+</html>
